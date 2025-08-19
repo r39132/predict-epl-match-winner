@@ -1,0 +1,30 @@
+name: CI
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12.3"
+      - name: Install project
+        run: |
+          uv pip install -e ".[dev]"
+      - name: Lint / Format / Types
+        run: |
+          black --check .
+          isort --check-only .
+          ruff check .
+          ruff format --check .
+          mypy src
+      - name: Tests
+        run: |
+          pytest --cov=src --cov-report=term-missing

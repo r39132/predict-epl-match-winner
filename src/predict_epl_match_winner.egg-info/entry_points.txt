@@ -1,0 +1,2 @@
+[console_scripts]
+pemw = pemw.cli:app

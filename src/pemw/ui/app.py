@@ -41,9 +41,12 @@ if not teams:
     st.stop()
 
 st.caption("Season 2025/2026")
-home = st.selectbox("Home team", teams, index=0 if teams else 0)
+home = st.selectbox("Home team", teams, index=0)
 away_choices = [t for t in teams if t != home]
-away = st.selectbox("Away team", away_choices, index=0 if away_choices else 0)
+if not away_choices:
+    st.warning("Need at least two distinct teams in data.")
+    st.stop()
+away = st.selectbox("Away team", away_choices, index=0)
 
 # Safety: streamlit returns a value from the provided list when list non-empty
 assert isinstance(home, str)

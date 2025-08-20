@@ -19,7 +19,7 @@ Requires-Dist: pyarrow>=17.0.0
 Provides-Extra: dev
 Requires-Dist: pytest>=8.3.1; extra == "dev"
 Requires-Dist: pytest-cov>=5.0.0; extra == "dev"
-Requires-Dist: ruff>=0.5.6; extra == "dev"
+Requires-Dist: ruff==0.12.9; extra == "dev"
 Requires-Dist: mypy>=1.11.1; extra == "dev"
 Requires-Dist: types-requests>=2.32.0.20240712; extra == "dev"
 Requires-Dist: pandas-stubs>=2.2.2.240603; extra == "dev"

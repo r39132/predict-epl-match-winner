@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from pemw import cli
 from typer.testing import CliRunner
+
+from pemw import cli
 
 
 def test_cli_prepare_and_train(monkeypatch, tmp_path: Path) -> None:  # type: ignore[no-untyped-def]

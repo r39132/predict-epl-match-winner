@@ -29,7 +29,8 @@ build-backend = "setuptools.build_meta"
 dev = [
   "pytest>=8.3.1",
   "pytest-cov>=5.0.0",
-  "ruff>=0.5.6",
+  # Pin ruff to align local & CI to avoid version drift causing style diffs
+  "ruff==0.12.9",
   "mypy>=1.11.1",
   "types-requests>=2.32.0.20240712",
   "pandas-stubs>=2.2.2.240603",
@@ -40,7 +41,7 @@ dev = [
 ]
 # Optional extra kept for compatibility with pip install .[dev]
 [project.optional-dependencies]
-dev = ["pytest>=8.3.1","pytest-cov>=5.0.0","ruff>=0.5.6","mypy>=1.11.1","types-requests>=2.32.0.20240712","pandas-stubs>=2.2.2.240603","pre-commit>=3.8.0","black>=24.8.0","genbadge[coverage]>=1.1.1"]
+dev = ["pytest>=8.3.1","pytest-cov>=5.0.0","ruff==0.12.9","mypy>=1.11.1","types-requests>=2.32.0.20240712","pandas-stubs>=2.2.2.240603","pre-commit>=3.8.0","black>=24.8.0","genbadge[coverage]>=1.1.1"]
 
 [tool.black]
 line-length = 100

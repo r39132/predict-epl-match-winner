@@ -34,8 +34,9 @@ jobs:
 
       - name: Lint & type-check
         run: |
+          uv run ruff --version
           uv run ruff check .
-          uv run ruff format --check .
+          uv run black --check .
           uv run mypy src tests
 
       - name: Run tests with coverage

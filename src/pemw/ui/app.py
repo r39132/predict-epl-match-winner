@@ -6,6 +6,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 import streamlit as st
+
 from pemw.data import load_raw_csvs
 from pemw.model import NUMERIC, load_local_model
 
@@ -40,9 +41,13 @@ if not teams:
     st.stop()
 
 st.caption("Season 2025/2026")
-home = st.selectbox("Home team", teams, index=0 if teams else None)
+home = st.selectbox("Home team", teams, index=0 if teams else 0)
 away_choices = [t for t in teams if t != home]
-away = st.selectbox("Away team", away_choices, index=0 if away_choices else None)
+away = st.selectbox("Away team", away_choices, index=0 if away_choices else 0)
+
+# Safety: streamlit returns a value from the provided list when list non-empty
+assert isinstance(home, str)
+assert isinstance(away, str)
 
 
 def last5_summary(team: str, df: pd.DataFrame) -> dict[str, Any]:

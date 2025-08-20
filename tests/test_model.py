@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pandas as pd
+
 from pemw.features import compute_features
 from pemw.model import _pipe
 

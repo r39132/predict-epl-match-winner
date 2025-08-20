@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pandas as pd
+
 from pemw.features import compute_features
 from pemw.model import evaluate_local, load_local_model, train_local
 

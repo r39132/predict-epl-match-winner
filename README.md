@@ -8,7 +8,6 @@
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://pre-commit.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 [![CI](https://github.com/r39132/predict-epl-match-winner/actions/workflows/ci.yml/badge.svg)](https://github.com/r39132/predict-epl-match-winner/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/r39132/predict-epl-match-winner/branch/main/graph/badge.svg)](https://codecov.io/gh/r39132/predict-epl-match-winner)
 ![coverage](coverage-badge.svg)
 
 # Predict EPL Match Winner

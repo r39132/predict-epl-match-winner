@@ -3,10 +3,11 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 import pandas as pd
 import streamlit as st
 from pemw.data import load_raw_csvs
-from pemw.model import load_local_model
+from pemw.model import NUMERIC, load_local_model
 
 BASE = Path(__file__).resolve().parents[3]
 ARTIFACTS = BASE / "artifacts"
@@ -97,9 +98,6 @@ st.dataframe(summ_df, use_container_width=True)
 
 if st.button("Predict Winner of Match"):
     model, meta = load_local_model(ARTIFACTS)
-    import numpy as np
-    from pemw.model import NUMERIC
-
     row: dict[str, Any] = {c: 0.0 for c in NUMERIC}
     row["HomeTeam"] = home
     row["AwayTeam"] = away

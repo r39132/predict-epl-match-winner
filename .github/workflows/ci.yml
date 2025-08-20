@@ -46,7 +46,7 @@ jobs:
       - name: Generate coverage badge
         run: |
           # genbadge is already in dev dependencies; invoke directly without pip (pip not installed in slim uv env)
-          uv run python -m genbadge.coverage -i coverage.xml -o coverage-badge.svg
+            uv run python scripts/make_coverage_badge.py coverage.xml coverage-badge.svg
 
       - name: Commit coverage badge (main only)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'

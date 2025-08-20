@@ -72,6 +72,7 @@ def _pipe(  # noqa: PLR0913 (argument count acceptable for clarity)
     class_weight: str | None = None,
     model_type: str = "logreg",
     hgb_params: dict[str, Any] | None = None,
+    max_iter: int = 1000,
 ) -> Pipeline:
     """Build preprocessing + model pipeline.
 
@@ -98,7 +99,7 @@ def _pipe(  # noqa: PLR0913 (argument count acceptable for clarity)
                 ("cat", cat_pipe, categ),
             ]
         )
-        clf = LogisticRegression(max_iter=1000, C=C, class_weight=class_weight)
+        clf = LogisticRegression(max_iter=max_iter, C=C, class_weight=class_weight)
         return Pipeline([("pre", pre), ("clf", clf)])
     elif model_type == "hgb":
         # Ordinal encode categoricals; specify categorical feature indices to HGB
@@ -153,6 +154,7 @@ def train_local(  # noqa: PLR0913 (argument count acceptable)
     min_team_freq: int = 1,
     calibrate: bool = False,
     hgb_params: dict[str, Any] | None = None,
+    logreg_max_iter: int = 1000,
 ) -> Path:
     feats = _load_feats(processed_dir)
     # Drop numeric columns that are entirely NaN
@@ -168,6 +170,7 @@ def train_local(  # noqa: PLR0913 (argument count acceptable)
         class_weight="balanced" if model_type == "logreg" else None,
         model_type=model_type,
         hgb_params=hgb_params,
+        max_iter=logreg_max_iter,
     )
     estimator: Any
     if calibrate:
@@ -192,6 +195,7 @@ def evaluate_local(
     model_type: str = "logreg",
     min_team_freq: int = 1,
     hgb_params: dict[str, Any] | None = None,
+    logreg_max_iter: int = 1000,
 ) -> dict[str, float]:
     feats = _load_feats(processed_dir)
     numeric = [c for c in NUMERIC if c in feats.columns and feats[c].notna().any()]
@@ -210,6 +214,7 @@ def evaluate_local(
             class_weight="balanced" if model_type == "logreg" else None,
             model_type=model_type,
             hgb_params=hgb_params,
+            max_iter=logreg_max_iter,
         )
         model.fit(X.iloc[tr], y.iloc[tr])
         fold_pred = model.predict(X.iloc[te])
@@ -231,7 +236,12 @@ class LogRegResult(TypedDict):
     C: float
 
 
-def tune_logreg(processed_dir: Path, Cs: list[float] | None = None) -> LogRegResult:
+def tune_logreg(
+    processed_dir: Path,
+    Cs: list[float] | None = None,
+    *,
+    max_iter: int = 1000,
+) -> LogRegResult:
     """Simple time-series aware C parameter search.
 
     Returns metrics for best C (macro F1 primary, accuracy tie-breaker).
@@ -251,17 +261,24 @@ def tune_logreg(processed_dir: Path, Cs: list[float] | None = None) -> LogRegRes
         y_true: list[str] = []
         y_pred: list[str] = []
         for tr, te in tscv.split(X):
-            m = _pipe(numeric, categ, C=C, class_weight="balanced", model_type="logreg")
+            m = _pipe(
+                numeric,
+                categ,
+                C=C,
+                class_weight="balanced",
+                model_type="logreg",
+                max_iter=max_iter,
+            )
             m.fit(X.iloc[tr], y.iloc[tr])
             pred = m.predict(X.iloc[te])
             y_true.extend(y.iloc[te].tolist())
             y_pred.extend(pred.tolist())
         acc = accuracy_score(y_true, y_pred)
         f1m = f1_score(y_true, y_pred, average="macro")
-    if f1m > best_f1 or (f1m == best_f1 and acc > best_acc):
-        best_f1 = float(f1m)
-        best_acc = float(acc)
-        best_C = C
+        if f1m > best_f1 or (f1m == best_f1 and acc > best_acc):
+            best_f1 = float(f1m)
+            best_acc = float(acc)
+            best_C = C
     return LogRegResult(f1_macro=best_f1, accuracy=best_acc, C=best_C)
 
 
@@ -311,13 +328,14 @@ def tune_hgb(
     return best
 
 
-def select_and_train_best(
+def select_and_train_best(  # noqa: PLR0913 (argument count acceptable for clarity)
     processed_dir: Path,
     artifacts_dir: Path,
     *,
     min_team_freq: int = 1,
     calibrate: bool = False,
     hgb_params: dict[str, Any] | None = None,
+    logreg_max_iter: int = 1000,
 ) -> dict[str, Any]:
     """Evaluate logistic regression vs HGB and train + persist the better model.
 
@@ -329,12 +347,14 @@ def select_and_train_best(
         processed_dir,
         model_type="logreg",
         min_team_freq=min_team_freq,
+        logreg_max_iter=logreg_max_iter,
     )
     hgb_metrics = evaluate_local(
         processed_dir,
         model_type="hgb",
         min_team_freq=min_team_freq,
         hgb_params=hgb_params,
+        logreg_max_iter=logreg_max_iter,
     )
 
     # Decide
@@ -355,6 +375,7 @@ def select_and_train_best(
         min_team_freq=min_team_freq,
         calibrate=calibrate if chosen == "logreg" else False,
         hgb_params=hgb_params if chosen == "hgb" else None,
+        logreg_max_iter=logreg_max_iter,
     )
     result: dict[str, Any] = {
         "chosen_model": chosen,

@@ -16,6 +16,7 @@ Requires-Dist: requests>=2.32.3
 Requires-Dist: joblib>=1.4.2
 Requires-Dist: streamlit>=1.36.0
 Requires-Dist: pyarrow>=17.0.0
+Requires-Dist: notebook>=7.4.5
 Provides-Extra: dev
 Requires-Dist: pytest>=8.3.1; extra == "dev"
 Requires-Dist: pytest-cov>=5.0.0; extra == "dev"
@@ -26,6 +27,8 @@ Requires-Dist: pandas-stubs>=2.2.2.240603; extra == "dev"
 Requires-Dist: pre-commit>=3.8.0; extra == "dev"
 Requires-Dist: black>=24.8.0; extra == "dev"
 Requires-Dist: genbadge[coverage]>=1.1.1; extra == "dev"
+Requires-Dist: matplotlib>=3.9.0; extra == "dev"
+Requires-Dist: seaborn>=0.13.2; extra == "dev"
 Dynamic: license-file
 
 <!-------->

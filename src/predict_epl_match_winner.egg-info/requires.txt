@@ -7,6 +7,7 @@ requests>=2.32.3
 joblib>=1.4.2
 streamlit>=1.36.0
 pyarrow>=17.0.0
+notebook>=7.4.5
 
 [dev]
 pytest>=8.3.1
@@ -18,3 +19,5 @@ pandas-stubs>=2.2.2.240603
 pre-commit>=3.8.0
 black>=24.8.0
 genbadge[coverage]>=1.1.1
+matplotlib>=3.9.0
+seaborn>=0.13.2

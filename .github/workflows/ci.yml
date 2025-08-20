@@ -3,8 +3,12 @@ name: CI
 on:
   push:
     branches: [ main ]
+    paths-ignore:
+      - '**/*.ipynb'
   pull_request:
     branches: [ main ]
+    paths-ignore:
+      - '**/*.ipynb'
 
 permissions:
   contents: write   # needed to push coverage-badge.svg
@@ -35,8 +39,9 @@ jobs:
       - name: Lint & type-check
         run: |
           uv run ruff --version
-          uv run ruff check .
-          uv run black --check .
+          # Intentionally exclude Jupyter notebooks from CI lint/type checks
+          uv run ruff check src tests scripts
+          uv run black --check src tests scripts
           uv run mypy src tests
 
       - name: Run tests with coverage

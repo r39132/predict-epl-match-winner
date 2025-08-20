@@ -6,6 +6,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from .data import load_raw_csvs
+
 HOME_ADVANTAGE_ELO = 60.0
 K_FACTOR = 24.0
 
@@ -168,8 +170,6 @@ def compute_features(
 
 
 def build_training_table(raw_dir: Path, out_dir: Path) -> Path:
-    from .data import load_raw_csvs
-
     raw = load_raw_csvs(raw_dir)
     feats = compute_features(raw)
     out = out_dir / "features.parquet"

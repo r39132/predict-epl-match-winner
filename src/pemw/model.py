@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
@@ -367,8 +368,6 @@ def select_and_train_best(
     artifacts_dir.mkdir(parents=True, exist_ok=True)
     meta_path = artifacts_dir / "model_selection.json"
     try:
-        import json
-
         with meta_path.open("w") as f:
             json.dump(result, f, indent=2)
     except Exception:  # pragma: no cover - best effort

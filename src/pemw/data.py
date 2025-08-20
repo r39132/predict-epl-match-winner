@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime
 import warnings
 from pathlib import Path
 from typing import Final
@@ -19,7 +20,6 @@ def _season_code(start_year: int) -> str:
 
 def download_epl_data(dest_dir: Path, seasons: int = 20) -> int:
     # Try last `seasons` starting from current season back
-    import datetime
 
     year = datetime.date.today().year - 1  # likely season start year
     count = 0

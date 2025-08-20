@@ -7,3 +7,6 @@ __pycache__/
 # Project data/artifacts
 data/
 artifacts/
+
+coverage.xml
+.coverage*

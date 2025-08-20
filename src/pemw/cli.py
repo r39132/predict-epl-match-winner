@@ -1,17 +1,18 @@
 from __future__ import annotations
 
-import os
+import inspect
 from pathlib import Path
+
 import typer
 from rich import print as rprint
 
 from .data import download_epl_data
 from .features import build_training_table
-from .model import train_local, evaluate_local, save_model_artifacts
-from .gcs_utils import upload_dir_to_gcs, upload_file_to_gcs
-from .vertex import register_model, deploy_endpoint, predict_online
+from .model import evaluate_local as _evaluate_local
+from .model import select_and_train_best, tune_hgb, tune_logreg
+from .model import train_local as _train_local
 
-app = typer.Typer(add_completion=False, help="Predict EPL Match Winner CLI")
+app = typer.Typer(add_completion=False, help="Predict EPL Match Winner CLI (local-only)")
 BASE = Path(__file__).resolve().parents[2]
 DATA_RAW = BASE / "data" / "raw"
 DATA_PROCESSED = BASE / "data" / "processed"
@@ -32,51 +33,64 @@ def prepare_data() -> None:
     rprint(f"[green]Wrote features to {out}[/green]")
 
 
-@app.command()
-def train_local() -> None:
+@app.command(name="train-local")
+def train_local_cmd(
+    model_type: str = typer.Option("logreg", help="Model type: logreg|hgb"),
+    min_team_freq: int = typer.Option(1, help="Prune teams with < freq to 'Other'"),
+    calibrate: bool = typer.Option(False, help="Calibrate probabilities (isotonic, logreg only)"),
+) -> None:
     ARTIFACTS.mkdir(parents=True, exist_ok=True)
-    path = train_local(DATA_PROCESSED, ARTIFACTS)
+    sig = inspect.signature(_train_local)
+    kwargs = {"model_type": model_type, "min_team_freq": min_team_freq, "calibrate": calibrate}
+    if "model_type" in sig.parameters:
+        path = _train_local(DATA_PROCESSED, ARTIFACTS, **kwargs)  # type: ignore[arg-type]
+    else:  # compatibility with older signature / test monkeypatch
+        path = _train_local(DATA_PROCESSED, ARTIFACTS)
     rprint(f"[green]Saved model to {path}[/green]")
 
 
-@app.command()
-def evaluate_local() -> None:
-    metrics = evaluate_local(DATA_PROCESSED)
+@app.command(name="evaluate-local")
+def evaluate_local_cmd(
+    model_type: str = typer.Option("logreg", help="Model type: logreg|hgb"),
+    min_team_freq: int = typer.Option(1, help="Prune teams with < freq to 'Other'"),
+) -> None:
+    sig = inspect.signature(_evaluate_local)
+    kwargs = {"model_type": model_type, "min_team_freq": min_team_freq}
+    if "model_type" in sig.parameters:
+        metrics = _evaluate_local(DATA_PROCESSED, **kwargs)  # type: ignore[arg-type]
+    else:
+        metrics = _evaluate_local(DATA_PROCESSED)
     rprint("[bold cyan]Evaluation[/bold cyan]:", metrics)
 
 
-@app.command()
-def upload_data_gcs(bucket: str = typer.Option(..., "--bucket")) -> None:
-    upload_dir_to_gcs(DATA_RAW, bucket)
-    rprint("[green]Uploaded data to GCS[/green]")
+@app.command(name="tune-logreg")
+def tune_logreg_cmd() -> None:
+    """Grid search over a small C list using time-series CV."""
+    res = tune_logreg(DATA_PROCESSED)
+    rprint("[bold cyan]Tuning[/bold cyan]:", res)
 
 
-@app.command()
-def upload_model_gcs(bucket: str = typer.Option(..., "--bucket")) -> None:
-    upload_file_to_gcs(ARTIFACTS / "model.joblib", bucket, "models/model.joblib")
-    rprint("[green]Uploaded model to GCS[/green]")
+@app.command(name="tune-hgb")
+def tune_hgb_cmd() -> None:
+    """Grid search HistGradientBoosting hyperparameters."""
+    res = tune_hgb(DATA_PROCESSED)
+    rprint("[bold cyan]Tuning HGB[/bold cyan]:", res)
 
 
-@app.command()
-def vertex(ctx: typer.Context):
-    """Group for Vertex commands."""
+@app.command(name="auto-select")
+def auto_select_cmd(
+    min_team_freq: int = typer.Option(1, help="Prune teams with < freq to 'Other'"),
+    calibrate: bool = typer.Option(False, help="Calibrate probabilities for logreg candidate"),
+) -> None:
+    """Compare logreg vs hgb (macro F1 primary) and persist best model."""
+    ARTIFACTS.mkdir(parents=True, exist_ok=True)
+    res = select_and_train_best(
+        DATA_PROCESSED,
+        ARTIFACTS,
+        min_team_freq=min_team_freq,
+        calibrate=calibrate,
+    )
+    rprint("[bold cyan]Model Selection[/bold cyan]:", res)
 
 
-@vertex.command("register-model")
-def vertex_register_model() -> None:
-    model_res = register_model(artifacts_dir=ARTIFACTS)
-    rprint(model_res)
-
-
-@vertex.command("deploy-endpoint")
-def vertex_deploy_endpoint() -> None:
-    endpoint_name = deploy_endpoint()
-    rprint({"endpoint": endpoint_name})
-
-
-@vertex.command("predict")
-def vertex_predict(endpoint: str = typer.Option(..., "--endpoint"),
-                   home: str = typer.Option(..., "--home"),
-                   away: str = typer.Option(..., "--away")) -> None:
-    probs, label = predict_online(endpoint, home, away)
-    rprint({"Home": probs[0], "Draw": probs[1], "Away": probs[2], "prediction": label})
+# Cloud (GCS / Vertex) functionality permanently removed for local-only scope.

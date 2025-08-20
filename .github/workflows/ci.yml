@@ -1,4 +1,72 @@
 name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: write
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+            python-version: '3.12'
+
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "UV_CACHE_DIR=$HOME/.cache/uv" >> $GITHUB_ENV
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Cache uv
+        uses: actions/cache@v4
+        with:
+          path: |
+            .venv
+            ${{ env.UV_CACHE_DIR }}
+          key: uv-${{ runner.os }}-${{ hashFiles('pyproject.toml', 'uv.lock') }}
+          restore-keys: |
+            uv-${{ runner.os }}-
+
+      - name: Sync dependencies
+        run: |
+          uv sync --dev
+
+      - name: Lint (ruff) & Type check (mypy)
+        run: |
+          uv run ruff check .
+          uv run mypy src tests
+
+      - name: Run tests with coverage
+        run: |
+          uv run pytest --cov=src --cov-report=xml --cov-report=term
+
+      - name: Generate coverage badge
+        run: |
+          uv run python -m genbadge.coverage -i coverage.xml -o coverage-badge.svg
+
+      - name: Commit coverage badge (main only)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          if git diff --quiet coverage-badge.svg 2>/dev/null; then
+            echo "No coverage badge changes"
+          else
+            git config user.name "github-actions"
+            git config user.email "github-actions@github.com"
+            git add coverage-badge.svg
+            git commit -m "chore: update coverage badge" || echo "No changes to commit"
+            git push
+          fi
+name: CI
 on:
   push:
   pull_request:
